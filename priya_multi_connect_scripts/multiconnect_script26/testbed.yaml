@@ -1,0 +1,35 @@
+testbed:
+    name: tls_login_test
+
+devices:
+    vwlc-ksukulka:
+        os: 'iosxe'
+        type: 'c8kv'
+        platform: 'c8kv'
+        connections:
+            defaults:
+                class: 'unicon.Unicon'
+                via: telnet  # Set Telnet as the default connection method
+            telnet:
+                protocol: telnet
+                ip: 10.76.239.45
+                port: 3006
+
+        credentials:
+            default:
+                username: ksukulka
+                password: cisco
+            enable:
+                password: cisco123
+
+        custom:
+            tac_server1: "TACACS_Server1"
+            tac_server2: "TACACS_Server2"
+            server_ip1: "192.168.1.1"
+            server_ip2: "192.168.1.2"
+            tacacs_key: "cisco123"
+            tacacs_port: 49
+            tacacs_timeout: 5
+            nontac_server1: "NonTACACS_Server1"
+            nontac_server2: "NonTACACS_Server2"
+            tacacs_group: "TACACS_Group"

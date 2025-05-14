@@ -1,0 +1,30 @@
+testbed:
+    name: tacacs_testbed
+
+devices:
+    vwlc-ksukulka:
+        os: 'iosxe'
+        type: 'c8kv'
+        platform: 'c8kv'
+        connections:
+            defaults:
+                class: 'unicon.Unicon'
+                via: telnet  # Set Telnet as the default connection method
+            telnet:
+                protocol: telnet
+                ip: 10.76.239.45
+                port: 3006
+
+        credentials:
+            default:
+                username: ksukulka
+                password: cisco
+            enable:
+                password: cisco123
+
+        custom:
+            tac_nontls_server1: "TAC_NonTLS_Server1"
+            nontls_server_ip1: "192.168.2.1"
+            tac_nontls_server2: "TAC_NonTLS_Server2"
+            nontls_server_ip2: "192.168.2.2"
+            nontls_group: "NonTLS_Group"

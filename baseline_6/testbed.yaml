@@ -1,0 +1,31 @@
+devices:
+  vwlc-ksukulka:
+    alias: 'uut'
+    os: 'iosxe'
+    type: 'c9800'
+    platform: 'c9800'
+    connections:
+      defaults:
+        class: 'unicon.Unicon'
+      a:
+        protocol: telnet
+        ip: 10.76.239.45
+        port: 3006
+    credentials:
+      default:
+        username: ksukulka
+        password: cisco
+    custom:
+      tacacs_servers:
+        - server: '10.76.239.47'
+          key: 'cisco'
+        - server: '10.76.239.48'
+          key: 'cisco'
+      tacacs_group: 'TAC_Grp'
+      ssh_ip: '10.76.239.45'
+      tls_port: '6049'
+      tls_idle_timeout: '61'
+      tls_connection_timeout: '32'
+      tls_retries: '2'
+      source_interface: 'GigabitEthernet1'
+      priv_level: '15'

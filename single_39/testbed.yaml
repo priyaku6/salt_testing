@@ -1,0 +1,32 @@
+testbed:
+name: tacacs_testbed
+
+devices:
+vwlc-ksukulka:
+os: iosxe
+type: c8kv
+platform: c8kv
+connections:
+defaults:
+class: unicon.Unicon
+via: ssh
+ssh:
+protocol: ssh
+ip: 10.76.239.180
+credentials:
+default:
+username: ksukulka
+password: cisco
+enable:
+password: cisco123
+custom:
+tacacs_server_name: 'TAC'
+tacacs_server_group: 'TAC_Grp'
+tacacs_ip: '10.76.239.47'
+tls_port: '6049'
+tls_idle_timeout: '61'
+tls_connection_timeout: '32'
+tls_retries: '2'
+source_interface: 'GigabitEthernet1'
+priv_level: '15'
+

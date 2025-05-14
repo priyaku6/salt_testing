@@ -1,0 +1,19 @@
+devices:
+  vwlc-ksukulka:
+    alias: 'uut'
+    os: 'iosxe'
+    type: 'c8kv'
+    platform: 'c8kv'
+    connections:
+      defaults:
+        class: 'unicon.Unicon'
+      ssh:
+        protocol: ssh
+        ip: "10.76.239.180"
+    credentials:
+      default:
+        username: ksukulka
+        password: cisco
+    custom:
+      tacacs_server_name: 'TAC'
+      tacacs_ip_working: '10.76.239.47'

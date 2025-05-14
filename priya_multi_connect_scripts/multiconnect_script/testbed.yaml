@@ -1,0 +1,34 @@
+testbed:
+    name: tls_login_test
+
+devices:
+    vwlc-ksukulka:
+        alias: 'uut'  # Alias for easier reference in the script
+        os: 'iosxe'
+        type: 'c8kv'
+        platform: 'c8kv'
+        connections:
+            defaults:
+                class: 'unicon.Unicon'
+            telnet:
+                protocol: telnet
+                ip: 10.76.239.45
+                port: 3006  # Correct port
+
+        credentials:
+            default:
+                username: ksukulka
+                password: cisco
+            enable:
+                password: cisco123
+
+        custom:
+            tacacs_key: "cisco123"  # Add the TACACS key
+            nontls_server1: "NonTLS_Server1"  # Add missing key
+            nontls_server1_ip: "192.168.2.1"  # Add missing key
+            nontls_server2: "NonTLS_Server2"  # Add missing key
+            nontls_server2_ip: "192.168.2.2"  # Add missing key
+            tls_group: "TLS_Group"
+            nontls_group: "NonTLS_Group"
+            tls_client_trustpoint: "TP-self-signed-2215044181"
+            tls_server_trustpoint: "ISE_TACACS_TLS_TP"

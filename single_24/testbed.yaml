@@ -1,0 +1,40 @@
+testbed:
+    name: tls_login_test  # Name of the testbed
+
+devices:
+    vwlc-ksukulka:  # Correct hostname
+        os: iosxe  # Operating system type
+        type: c8kv  # Device type
+        platform: c8kv  # Platform type
+        connections:
+            defaults:
+                class: unicon.Unicon  # Connection class for Unicon
+                via: telnet  # Default connection method
+            telnet:
+                protocol: telnet  # Using Telnet for device connection
+                ip: 10.76.239.45  # Device IP address
+                port: 3006  # Telnet port
+            ssh:
+                protocol: ssh  # Using SSH for device connection
+                ip: 10.76.239.180  # Device IP address for SSH
+
+        credentials:
+            default:
+                username: ksukulka  # Username for login
+                password: cisco  # Password for login
+            enable:
+                password: cisco123  # Password for enable mode
+            ssh:
+                username: ksukulka  # SSH username
+                password: cisco  # SSH password
+
+        custom:
+            tacacs_server_name: 'TAC'
+            tacacs_server_group: 'TAC_Grp'
+            tacacs_ip: '10.76.239.47'
+            tls_port: '6049'
+            tls_idle_timeout: '61'
+            tls_connection_timeout: '32'
+            tls_retries: '2'
+            source_interface: 'GigabitEthernet1'
+            priv_level: '15'

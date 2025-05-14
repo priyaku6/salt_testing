@@ -1,0 +1,38 @@
+testbed:
+    name: tls_login_test  # Name of the testbed
+
+devices:
+    vwlc-ksukulka:
+        alias: 'uut'  # Alias for easier reference in the script
+        os: 'iosxe'  # Operating system type
+        type: 'c8kv'  # Device type
+        platform: 'c8kv'  # Platform type
+        connections:
+            defaults:
+                class: 'unicon.Unicon'  # Connection class for Unicon
+            telnet:
+                protocol: telnet  # Using Telnet for device connection
+                ip: 10.76.239.45  # Device IP address
+                port: 3006  # Telnet port (ensure this is correct)
+
+        credentials:
+            default:
+                username: ksukulka  # Username for login
+                password: cisco  # Password for login
+            enable:
+                password: cisco123  # Password for enable mode
+
+        custom:
+            # Shared TACACS+ key for authentication
+            tacacs_key: "cisco123"
+
+            # TACACS+ server and group details
+            tacacs_server_name: "NonTLS_Server1"  # TACACS+ server name
+            server_group: "NonTLS_Group"  # TACACS+ server group name
+            server_fqdn: "tacacs.example.com"  # TACACS+ server FQDN
+            address_type: "fqdn"  # Address type (fqdn or ipv4)
+            tls_port: 49  # TLS port
+            connection_timeout: 30  # TLS connection timeout
+            tls_client_trustpoint: "TP-self-signed-2215044181"  # Client trustpoint
+            tls_server_trustpoint: "ISE_TACACS_TLS_TP"  # Server trustpoint
+

@@ -1,0 +1,46 @@
+testbed:
+    name: tls_login_test  # Name of the testbed
+
+devices:
+    vwlc-ksukulka:  # Correct hostname
+        os: iosxe  # Operating system type
+        type: c8kv  # Device type
+        platform: c8kv  # Platform type
+        connections:
+            defaults:
+                class: unicon.Unicon  # Connection class for Unicon
+                via: telnet  # Default connection method
+            telnet:
+                protocol: telnet  # Using Telnet for device connection
+                ip: 10.76.239.45  # Device IP address
+                port: 3006  # Telnet port
+            ssh:
+                protocol: ssh  # Using SSH for device connection
+                ip: 10.76.239.180  # Device IP address for SSH
+
+        credentials:
+            default:
+                username: ksukulka  # Username for login
+                password: cisco  # Password for login
+            enable:
+                password: cisco123  # Password for enable mode
+            ssh:
+                username: ksukulka  # SSH username
+                password: cisco  # SSH password
+
+        custom:
+            tacacs_key: cisco123  # Shared TACACS+ key for authentication
+            tacacs_tls_server: TLS_Server1  # TLS-enabled TACACS+ server name
+            tacacs_tls_ip: 192.168.2.2  # IP address of the TLS-enabled TACACS+ server
+            tacacs_nontls_server: NonTLS_Server1  # Non-TLS TACACS+ server name
+            tacacs_nontls_ip: 192.168.2.1  # IP address of the Non-TLS TACACS+ server
+            tacacs_group: NonTLS_Group  # TACACS+ server group name
+            server_fqdn: tacacs.example.com  # TACACS+ server FQDN
+            address_type: fqdn  # Address type (fqdn or ipv4)
+            tls_port: 49  # TLS port
+            connection_timeout: 30  # TLS connection timeout
+            tls_client_trustpoint: TP-self-signed-2215044181  # Client trustpoint
+            tls_server_trustpoint: ISE_TACACS_TLS_TP  # Server trustpoint
+            retries: 3  # Number of retries for TLS connection
+            idle_timeout: 30  # TLS idle timeout
+            source_interface: GigabitEthernet1  # Source interface for TACACS+ communication

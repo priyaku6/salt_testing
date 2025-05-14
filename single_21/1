@@ -1,0 +1,39 @@
+testbed:
+  name: tacacs_testbed
+  devices:
+    uut:
+      alias: 'uut'
+      os: 'iosxe'
+      type: 'vwlc'
+      platform: 'vwlc'
+      connections:
+        defaults:
+          class: 'unicon.Unicon'
+        a:
+          protocol: telnet
+          ip: 10.76.239.45
+          port: 3006
+        ssh:
+          protocol: ssh
+          ip: 10.76.239.180
+      credentials:
+        default:
+          username: ksukulka
+          password: cisco
+        enable:
+          password: cisco123
+        ssh:
+          username: ksukulka
+          password: cisco
+      custom:
+        tacacs_tls_server: "TLS_Server1"
+        tacacs_tls_ip: "192.168.2.2"
+        tacacs_nontls_server: "NonTLS_Server1"
+        tacacs_nontls_ip: "192.168.2.1"
+        tacacs_group: "Tacacs_Group"
+        tacacs_key: "cisco123"
+        tls_port: 49
+        idle-timeout: 30
+        connection-timeout: 10
+        retries: 3
+        source_interface: "GigabitEthernet1"

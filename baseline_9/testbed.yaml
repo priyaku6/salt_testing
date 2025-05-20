@@ -8,9 +8,9 @@ devices:
       defaults:
         class: 'unicon.Unicon'
       a:
-        protocol: telnet
-        ip: 10.76.239.45
-        port: 3006
+        protocol: ssh
+        ip: 10.106.249.248
+        port: 22
     credentials:
       default:
         username: ksukulka

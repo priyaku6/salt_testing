@@ -1,0 +1,24 @@
+devices:
+  vwlc-ksukulka:
+    alias: 'uut'
+    os: 'iosxe'
+    type: 'c9800'
+    platform: 'c9800'
+    connections:
+      defaults:
+        class: 'unicon.Unicon'
+      telnet:
+        protocol: telnet
+        ip: 10.106.249.248
+        port: 23
+    credentials:
+      default:
+        username: ksukulka
+        password: cisco
+    custom:
+      tacacs_nonworking_name: 'NONWORKING_TAC'
+      tacacs_nonworking_ip: '10.1.1.1'
+      tacacs_nonworking_group: 'NONWORKING_GROUP'
+      tacacs_working_name: 'WORKING_TAC'
+      tacacs_working_ip: '10.76.239.47'
+      tacacs_working_group: 'WORKING_GROUP'

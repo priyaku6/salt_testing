@@ -1,0 +1,29 @@
+devices:
+  vwlc-ksukulka:
+    alias: 'uut'
+    os: 'iosxe'
+    type: 'c9800'
+    platform: 'c9800'
+    connections:
+      defaults:
+        class: 'unicon.Unicon'
+      a:
+        protocol: ssh
+        ip: 10.106.249.248
+        port: 22
+    credentials:
+      default:
+        username: ksukulka
+        password: cisco
+    custom:
+      tacacs_server1_name: 'TAC'
+      tacacs_server2_name: 'TAC2'
+      tacacs_group_name: 'TAC_GRP'
+      tacacs_server1_ip: '10.76.239.74'
+      tacacs_server2_ip: '10.76.239.47'
+      tls_port: '6049'
+      tls_idle_timeout: '61'
+      tls_connection_timeout: '32'
+      tls_retries: '2'
+      source_interface: 'GigabitEthernet1'
+      priv_level: '15'

@@ -1,0 +1,24 @@
+devices:
+  vwlc-ksukulka:
+    alias: 'uut'
+    os: 'iosxe'
+    type: 'c9800'
+    platform: 'c9800'
+    connections:
+      ssh:
+        protocol: ssh
+        ip: 10.106.249.248
+        port: 22
+        class: unicon.Unicon
+    credentials:
+      default:
+        username: ksukulka
+        password: cisco
+    custom:
+      tacacs_server1_name: 'TAC1'
+      tacacs_server1_ip: '1.1.1.1'         # Non-working server
+      tacacs_server2_name: 'TAC2'
+      tacacs_server2_ip: '10.76.239.47'    # Working server
+      tacacs_key: 'cisco123'
+      tacacs_group: 'TAC_GRP'
+      source_interface: 'GigabitEthernet1'

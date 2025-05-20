@@ -22,6 +22,7 @@ devices:
         custom:
             tacacs_server_name: 'TAC'
             tacacs_server_group: 'TAC_Grp'
+            tacacs_fqdn: 'tacacs.cisco.com'      # <-- Add this line
             tacacs_ip: '10.76.239.47'
             tls_port: '6049'
             tls_idle_timeout: '61'

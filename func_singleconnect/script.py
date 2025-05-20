@@ -178,7 +178,6 @@ class TacacsMergedTest(aetest.Testcase):
         uut.api.configure_tacacs_group({'server_group': uut.custom['non_tls_group'], 'server_name': uut.custom['non_tls2_name']})
         # Step 7: FQDN group
         uut.api.configure_tacacs_group({'server_group': uut.custom['fqdn_group'], 'server_name': uut.custom['fqdn_name']})
-        # Step 4: TLS3 group
         uut.api.configure_tacacs_group({'server_group': uut.custom['tls3_group'], 'server_name': uut.custom['tls3_name']})
 
     @aetest.test

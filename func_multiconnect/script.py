@@ -48,7 +48,7 @@ class TacacsFailoverTest(aetest.Testcase):
             {
                 'host': 'TLS_SERVER_DOWN',
                 'timeout': 10,
-                'key_type': 7,
+                'key_type': 0,
                 'key': 'key1',
                 'server': '192.0.2.1',
                 'address_type': 'ipv4',
@@ -75,7 +75,7 @@ class TacacsFailoverTest(aetest.Testcase):
             {
                 'host': 'TLS_SERVER_UP',
                 'timeout': 10,
-                'key_type': 7,
+                'key_type': 0,
                 'key': 'key3',
                 'server': '192.0.2.3',
                 'address_type': 'ipv4',
@@ -92,7 +92,7 @@ class TacacsFailoverTest(aetest.Testcase):
             {
                 'host': 'FQDN_TLS_SERVER',
                 'timeout': 10,
-                'key_type': 7,
+                'key_type': 0,
                 'key': 'key4',
                 'server': 'tacacs.example.com',
                 'address_type': 'hostname',

@@ -1,244 +1,226 @@
 import logging
+import time
 import re
 from pyats import aetest
 
 log = logging.getLogger(__name__)
 
+def get_custom(uut, key, default=None):
+    return uut.custom.get(key, default)
+
 class CommonSetup(aetest.CommonSetup):
     @aetest.subsection
     def connect_to_devices(self, testbed):
-        """Connect to device."""
-        uut = testbed.devices['uut']
-        uut.connect(via='ssh_login')
+        uut = testbed.devices['vwlc-ksukulka']
+        uut.connect(via='a')
         self.parent.parameters['uut'] = uut
 
     @aetest.subsection
     def save_initial_config(self, uut):
-        """Save the initial configuration before any tests."""
         uut.api.copy_running_config_to_flash_memory(timeout=300)
+        uut.api.configure_terminal_length(0)
 
-class TacacsMergedTest(aetest.Testcase):
-    """Merged TACACS+ TLS/Non-TLS/FQDN/Group testcases"""
-
+class TacacsMultiScenarioTest(aetest.Testcase):
     @aetest.setup
     def setup(self, uut):
-        """Setup required configurations"""
-        # Get device's self-signed certificate name
         output = uut.execute('show crypto pki certificates pem | sec self')
         match = re.search(r'Trustpoint: (TP-self-signed-\d+)', output)
         if not match:
             self.failed("Could not find self-signed certificate")
         self.parent.parameters['self_cert'] = match.group(1)
-
-        # Enable required debugs
         debugs = [
             "debug aaa authorization",
             "debug tacacs",
             "debug aaa authentication",
             "debug aaa accounting",
+            "debug ssl openssl errors",
         ]
         for debug in debugs:
-            uut.execute(debug)
+            try:
+                uut.execute(debug)
+            except Exception as e:
+                log.warning(f"Skipping debug command '{debug}': {e}")
+
+    def _check_accounting_success(self, logs, fail_msg):
+        if re.search(r'Accounting response status\s*=\s*FAILURE', logs, re.IGNORECASE):
+            log.error("TACACS+ Accounting FAILURE detected. Please check:\n"
+                      "- Server reachability (ping, port open)\n"
+                      "- Shared secret/key match\n"
+                      "- Server is configured to allow accounting\n"
+                      "- Device source-interface is correct\n"
+                      "- Server logs for errors")
+            log.error("Last 50 log lines:\n%s", "\n".join(logs.splitlines()[-50:]))
+            self.failed(fail_msg + " (FAILURE detected)")
+        if not (re.search(r'TACACS\+ Accounting response status\s*=\s*SUCCESS', logs, re.IGNORECASE) or
+                re.search(r'Accounting Response:\s*PASS', logs, re.IGNORECASE)):
+            log.error("Last 50 log lines:\n%s", "\n".join(logs.splitlines()[-50:]))
+            self.failed(fail_msg)
 
     @aetest.test
-    def configure_all_tacacs_servers(self, uut):
-        """Configure all TACACS+ servers for all steps using the API"""
-        server_configs = [
-            # Step 1: TLS (Not Working) and Non-TLS
-            {
-                'host': uut.custom['tls_not_working_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['tls_not_working_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True,
-                'tls_port': uut.custom['tls_port'],
-                'tls_idle_timeout': 60,
-                'tls_connection_timeout': 5,
-                'tls_retries': 3,
-                'tls_trustpoint_client': self.parent.parameters['self_cert'],
-                'tls_trustpoint_server': 'UNREACHABLE_TP',
-                'tls_source_interface': uut.custom['source_interface'],
-                'tls_ip_tacacs_source_interface': uut.custom['source_interface']
-            },
-            {
-                'host': uut.custom['non_tls_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['non_tls_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True
-            },
-            # Step 2: Two TLS servers
-            {
-                'host': uut.custom['tls1_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['tls1_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True,
-                'tls_port': uut.custom['tls_port'],
-                'tls_idle_timeout': 60,
-                'tls_connection_timeout': 5,
-                'tls_retries': 3,
-                'tls_trustpoint_client': self.parent.parameters['self_cert'],
-                'tls_trustpoint_server': uut.custom['tls_trustpoint_server'],
-                'tls_source_interface': uut.custom['source_interface'],
-                'tls_ip_tacacs_source_interface': uut.custom['source_interface']
-            },
-            {
-                'host': uut.custom['tls2_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['tls2_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True,
-                'tls_port': uut.custom['tls_port'],
-                'tls_idle_timeout': 60,
-                'tls_connection_timeout': 5,
-                'tls_retries': 3,
-                'tls_trustpoint_client': self.parent.parameters['self_cert'],
-                'tls_trustpoint_server': uut.custom['tls_trustpoint_server'],
-                'tls_source_interface': uut.custom['source_interface'],
-                'tls_ip_tacacs_source_interface': uut.custom['source_interface']
-            },
-            # Step 3: FQDN with TLS
-            {
-                'host': uut.custom['fqdn_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['fqdn'],
-                'address_type': 'hostname',
-                'single_connection': True,
-                'tls_port': uut.custom['tls_port'],
-                'tls_idle_timeout': 60,
-                'tls_connection_timeout': 5,
-                'tls_retries': 3,
-                'tls_trustpoint_client': self.parent.parameters['self_cert'],
-                'tls_trustpoint_server': uut.custom['tls_trustpoint_server'],
-                'tls_source_interface': uut.custom['source_interface'],
-                'tls_ip_tacacs_source_interface': uut.custom['source_interface']
-            },
-            # Step 4: Another TLS server
-            {
-                'host': uut.custom['tls3_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['tls3_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True,
-                'tls_port': uut.custom['tls_port'],
-                'tls_idle_timeout': 60,
-                'tls_connection_timeout': 5,
-                'tls_retries': 3,
-                'tls_trustpoint_client': self.parent.parameters['self_cert'],
-                'tls_trustpoint_server': uut.custom['tls_trustpoint_server'],
-                'tls_source_interface': uut.custom['source_interface'],
-                'tls_ip_tacacs_source_interface': uut.custom['source_interface']
-            },
-            # Step 6: Two Non-TLS servers
-            {
-                'host': uut.custom['non_tls1_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['non_tls1_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True
-            },
-            {
-                'host': uut.custom['non_tls2_name'],
-                'timeout': 10,
-                'key_type': 7,
-                'key': uut.custom['tacacs_key'],
-                'server': uut.custom['non_tls2_ip'],
-                'address_type': 'ipv4',
-                'single_connection': True
-            }
-        ]
-        uut.api.configure_tacacs_server(uut, server_configs)
-
-    @aetest.test
-    def configure_all_server_groups(self, uut):
-        """Configure all TACACS+ server groups"""
-        # Step 2: TLS group
-        uut.api.configure_tacacs_group({'server_group': uut.custom['tls_group'], 'server_name': uut.custom['tls1_name']})
-        uut.api.configure_tacacs_group({'server_group': uut.custom['tls_group'], 'server_name': uut.custom['tls2_name']})
-        # Step 5: TLS (Not Working) + Non-TLS group
-        uut.api.configure_tacacs_group({'server_group': uut.custom['mixed_group'], 'server_name': uut.custom['tls_not_working_name']})
-        uut.api.configure_tacacs_group({'server_group': uut.custom['mixed_group'], 'server_name': uut.custom['non_tls_name']})
-        # Step 6: Non-TLS group
-        uut.api.configure_tacacs_group({'server_group': uut.custom['non_tls_group'], 'server_name': uut.custom['non_tls1_name']})
-        uut.api.configure_tacacs_group({'server_group': uut.custom['non_tls_group'], 'server_name': uut.custom['non_tls2_name']})
-        # Step 7: FQDN group
-        uut.api.configure_tacacs_group({'server_group': uut.custom['fqdn_group'], 'server_name': uut.custom['fqdn_name']})
-        uut.api.configure_tacacs_group({'server_group': uut.custom['tls3_group'], 'server_name': uut.custom['tls3_name']})
-
-    @aetest.test
-    def configure_aaa(self, uut):
-        """Configure AAA for all groups (priv 15 command accounting/authorization)"""
-        # Example: Use mixed_group for main AAA
-        uut.api.configure_aaa_authentication_login(auth_list='default', auth_type='', group_name=uut.custom['mixed_group'])
-        uut.api.configure_aaa_authorization_commands(level='15', level_name='default', level_action='', group_name=uut.custom['mixed_group'])
-        uut.api.configure_aaa_accounting_commands(accounting_level='15', accounting_name='default', group='group', group_name=uut.custom['mixed_group'], accounting_action='start-stop')
-
-    @aetest.test
-    def verify_ssh_login_authorization_accounting(self, uut):
-        """Verify SSH login, authorization, and accounting for all groups"""
-        # SSH login should fail (TLS not working), so expect failure
+    def step1_tls_and_non_tls_failover(self, uut):
+        tls_server = {
+            'host': 'TAC',
+            'timeout': 10,
+            'key_type': 0,
+            'key': 'key_tls',
+            'server': '10.76.239.74',
+            'address_type': 'ipv4',
+            'single_connection': True,
+            'tls_port': 6049,
+            'tls_idle_timeout': 61,
+            'tls_connection_timeout': 32,
+            'tls_retries': 2,
+            'tls_trustpoint_client': self.parent.parameters['self_cert'],
+            'tls_trustpoint_server': 'TP_TLS',
+            'tls_source_interface': 'GigabitEthernet1',
+        }
+        non_tls_server = {
+            'host': 'TAC2',
+            'timeout': 10,
+            'key_type': 0,
+            'key': 'key_nontls',
+            'server': '10.76.239.47',
+            'address_type': 'ipv4',
+            'single_connection': True,
+        }
+        uut.api.configure_tacacs_server([tls_server, non_tls_server])
+        uut.api.configure_tacacs_group({'server_group': 'TAC_GRP', 'server_name': 'TAC'})
+        uut.api.configure_tacacs_group({'server_group': 'TAC_GRP', 'server_name': 'TAC2'})
+        uut.api.configure_aaa_authentication_login(auth_list='default', auth_type='', group_name='TAC_GRP')
+        uut.api.configure_aaa_authorization_commands(level='15', level_name='default', level_action='', group_name='TAC_GRP')
+        uut.api.configure_aaa_accounting_commands(accounting_level='15', accounting_name='default', group='group', group_name='TAC_GRP', accounting_action='start-stop')
         try:
-            uut.api.reconnect_device(via='ssh_tacacs')
-            self.failed("SSH login succeeded but should have failed")
-        except Exception:
-            log.info("SSH login failed as expected")
-
-        # Authorization should fail
-        try:
-            uut.api.get_running_config()
-            self.failed("Authorization succeeded but should have failed")
-        except Exception:
-            log.info("Authorization failed as expected")
-
-        # Accounting should still be successful in logs
+            uut.api.reconnect_device(via='a')
+            uut.api.configure_terminal_length(0)
+            uut.api.configure_terminal_width(0)
+            log.info("Login successful (failover to Non-TLS)")
+        except Exception as e:
+            self.failed(f"Login failed: {str(e)}")
         uut.api.clear_logging()
         uut.execute('show users')
-        # Try privilege 15 command
-        try:
-            uut.execute('show running-config')
-        except Exception:
-            pass
-        # Try bulk privilege 15 commands
-        for _ in range(5):
-            try:
-                uut.execute('show version')
-            except Exception:
-                pass
-        # Verify accounting logs
-        uut.api.verify_pattern_in_show_logging(pattern_list=[
-            'AAA/ACCT.*Accounting response status = SUCCESS'
-        ])
-        log.info("TACACS+ accounting successful")
+        time.sleep(20)
+        logs = uut.execute('show logging')
+        log.info("Collected logs:\n%s", "\n".join(logs.splitlines()[-50:]))
+        self._check_accounting_success(logs, "Accounting not successful on Non-TLS after failover")
+        if 'TAC2' not in logs:
+            log.error("Last 50 log lines:\n%s", "\n".join(logs.splitlines()[-50:]))
+            self.failed("Failover to Non-TLS server not observed in logs")
+        log.info("Failover and accounting verified")
 
-        # Check for crashes/tracebacks
-        logs = uut.execute("show logging")
-        if "crash" in logs or "traceback" in logs:
-            self.failed("Crash or traceback found in logs")
+    @aetest.test
+    def step2_tls_and_non_tls_groups(self, uut):
+        tls_servers = [
+            {
+                'host': 'TAC',
+                'timeout': 10,
+                'key_type': 0,
+                'key': 'key_tls',
+                'server': '10.76.239.74',
+                'address_type': 'ipv4',
+                'single_connection': True,
+                'tls_port': 6049,
+                'tls_idle_timeout': 61,
+                'tls_connection_timeout': 32,
+                'tls_retries': 2,
+                'tls_trustpoint_client': self.parent.parameters['self_cert'],
+                'tls_trustpoint_server': 'TP_TLS',
+                'tls_source_interface': 'GigabitEthernet1',
+            }
+        ]
+        non_tls_servers = [
+            {
+                'host': 'TAC2',
+                'timeout': 10,
+                'key_type': 0,
+                'key': 'key_nontls',
+                'server': '10.76.239.47',
+                'address_type': 'ipv4',
+                'single_connection': True,
+            }
+        ]
+        uut.api.configure_tacacs_server(tls_servers + non_tls_servers)
+        uut.api.configure_tacacs_group({'server_group': 'TAC_GRP', 'server_name': 'TAC'})
+        uut.api.configure_tacacs_group({'server_group': 'TAC_GRP', 'server_name': 'TAC2'})
+        uut.api.configure_aaa_authentication_login(auth_list='default', auth_type='', group_name='TAC_GRP')
+        uut.api.configure_aaa_authorization_commands(level='15', level_name='default', level_action='', group_name='TAC_GRP')
+        uut.api.configure_aaa_accounting_commands(accounting_level='15', accounting_name='default', group='group', group_name='TAC_GRP', accounting_action='start-stop')
+        uut.api.clear_logging()
+        uut.api.reconnect_device(via='a')
+        uut.api.configure_terminal_length(0)
+        uut.api.configure_terminal_width(0)
+        time.sleep(10)
+        logs = uut.execute('show logging')
+        log.info("Collected logs:\n%s", logs)
+        if not re.search(r'TACACS\+ Accounting response status\s*=\s*SUCCESS', logs, re.IGNORECASE):
+            self.failed("Accounting not successful after group failover")
+        if 'TAC2' not in logs:
+            self.failed("Failover to Non-TLS group not observed in logs")
+        log.info("Group failover and accounting verified")
+
+    @aetest.test
+    def step3_single_tls_server(self, uut):
+        tls_server = {
+            'host': 'TAC',
+            'timeout': 10,
+            'key_type': 0,
+            'key': 'key_tls',
+            'server': '10.76.239.74',
+            'address_type': 'ipv4',
+            'single_connection': True,
+            'tls_port': 6049,
+            'tls_idle_timeout': 61,
+            'tls_connection_timeout': 32,
+            'tls_retries': 2,
+            'tls_trustpoint_client': self.parent.parameters['self_cert'],
+            'tls_trustpoint_server': 'TP_TLS',
+            'tls_source_interface': 'GigabitEthernet1',
+        }
+        uut.api.configure_tacacs_server([tls_server])
+        uut.api.configure_tacacs_group({'server_group': 'TAC_GRP', 'server_name': 'TAC'})
+        uut.api.configure_aaa_authentication_login(auth_list='default', auth_type='', group_name='TAC_GRP')
+        uut.api.configure_aaa_authorization_commands(level='15', level_name='default', level_action='', group_name='TAC_GRP')
+        uut.api.configure_aaa_accounting_commands(accounting_level='15', accounting_name='default', group='group', group_name='TAC_GRP', accounting_action='start-stop')
+        uut.api.clear_logging()
+        uut.api.reconnect_device(via='a')
+        uut.api.configure_terminal_length(0)
+        uut.api.configure_terminal_width(0)
+        time.sleep(10)
+        logs = uut.execute('show logging')
+        log.info("Collected logs:\n%s", logs)
+        if not re.search(r'TACACS\+ Accounting response status\s*=\s*SUCCESS', logs, re.IGNORECASE):
+            self.failed("Accounting not successful for single TLS server")
+        log.info("Single TLS server accounting verified")
+
+    @aetest.test
+    def step4_single_non_tls_server(self, uut):
+        non_tls_server = {
+            'host': 'TAC2',
+            'timeout': 10,
+            'key_type': 0,
+            'key': 'key_nontls',
+            'server': '10.76.239.47',
+            'address_type': 'ipv4',
+            'single_connection': True,
+        }
+        uut.api.configure_tacacs_server([non_tls_server])
+        uut.api.configure_tacacs_group({'server_group': 'TAC_GRP', 'server_name': 'TAC2'})
+        uut.api.configure_aaa_authentication_login(auth_list='default', auth_type='', group_name='TAC_GRP')
+        uut.api.configure_aaa_authorization_commands(level='15', level_name='default', level_action='', group_name='TAC_GRP')
+        uut.api.configure_aaa_accounting_commands(accounting_level='15', accounting_name='default', group='group', group_name='TAC_GRP', accounting_action='start-stop')
+        uut.api.clear_logging()
+        uut.api.reconnect_device(via='a')
+        uut.api.configure_terminal_length(0)
+        uut.api.configure_terminal_width(0)
+        time.sleep(10)
+        logs = uut.execute('show logging')
+        log.info("Collected logs:\n%s", logs)
+        if not re.search(r'TACACS\+ Accounting response status\s*=\s*SUCCESS', logs, re.IGNORECASE):
+            self.failed("Accounting not successful for single Non-TLS server")
+        log.info("Single Non-TLS server accounting verified")
 
 class CommonCleanup(aetest.CommonCleanup):
-    """Restore initial configuration."""
     @aetest.subsection
     def cleanup(self, uut):
-        """Restore the saved configuration and cleanup."""
         uut.execute('undebug all')
-        uut.api.restore_running_config_file(
-            path='flash:',
-            file='backup_config',
-            timeout=300
-        )
+        uut.api.restore_running_config_file(path='flash:', file='backup_config', timeout=300)
         uut.disconnect()

@@ -65,7 +65,7 @@ class TacacsFailoverTest(aetest.Testcase):
             {
                 'host': 'NON_TLS_SERVER',
                 'timeout': 10,
-                'key_type': 7,
+                'key_type': 0,
                 'key': 'key2',
                 'server': '192.0.2.2',
                 'address_type': 'ipv4',

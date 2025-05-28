@@ -6,7 +6,8 @@ devices:
     platform: 'c9800'
     connections:
       defaults:
-        class: 'unicon.Unicon'===      a:
+        class: 'unicon.Unicon'
+      a:
         protocol: telnet
         ip: 10.76.239.45
         port: 3006
@@ -40,9 +41,5 @@ devices:
       # Shared settings
       tacacs_key: "cisco"
       source_interface: "GigabitEthernet1"
-      tacacs_timeout: 10                                                                                                                                                                            
-~                                                                                                                                                                            
-~                                                                                                                                                                            
-~                                                                                                                                                                            
-~                                                                                                                                                                            
-~                                                                                                                                                                                                                                                                                                                                                     
+      tacacs_timeout: 10
+      

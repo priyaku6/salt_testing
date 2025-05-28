@@ -1,0 +1,109 @@
+cleaners:
+  DeviceClean:
+    module: genie.libs.clean
+    devices: [c8kv-7]
+
+devices:
+  c8kv-7:
+    images:
+        - '%CALLABLE{pyats.cisco.abs.get_last_green_image(polaris_dev,c8kv_universalk9-image)}'
+    device_recovery:
+      break_count: 5
+      console_activity_pattern: "\\.\\.\\.\\."
+      timeout: 600
+      recovery_password: "Infra@12345"
+      golden_image:
+        - flash:laas/cat9k_golden.bin
+
+
+    connect:
+
+
+    write_erase:
+
+
+    reload:
+      reload_service_args:
+        prompt_recovery: True
+        timeout: 1500
+      check_modules:
+        check: False
+
+
+    install_remove_inactive:
+      timeout: 180
+
+
+    install_image:
+      images: '%CALLABLE{pyats.cisco.abs.get_last_green_image(polaris_dev,c8kv_universalk9-image)}'
+      install_timeout: 1000
+      reload_timeout: 1000
+
+    ping_server:
+      server: laasv2vh
+
+    copy_to_linux:
+      protocol: scp
+      destination:
+        directory: '/auto/tftpblr_xeinfra/images'
+      overwrite: False
+      copy_attempts: 3
+      append_hostname: False
+
+    copy_to_device:
+      origin:
+        files:
+          - /
+        hostname: laasv2vh
+      destination:
+        directory: flash:/
+      protocol: scp
+      overwrite: False
+      timeout: 1200
+      skip_deletion: True
+      verify_num_images: True
+      check_file_stability: True
+      min_free_space_percent: 30
+      protected_files:
+        - laas
+        - .ssh
+        - tech_support
+        - boothelper.log
+        - preboothelper.log
+        - memleak.tcl
+        - nvram_config
+        - nvram_config_bkup
+
+    apply_configuration:
+      configuration: |
+        hostname c8kv-7
+        platform shell
+        service internal
+        no logging console
+        interface GigabitEthernet1
+          ip address 10.104.187.171 255.255.255.128
+          shut
+          no shut
+        line console 0
+          exec-timeout 0
+          logging synchronous
+        line vty 0 4
+          transport input all
+        ip route 0.0.0.0 0.0.0.0 GigabitEthernet1 10.104.187.129
+        ip tftp source-interface GigabitEthernet1 
+        ip ssh source-interface GigabitEthernet1
+        ip tftp blocksize 8192
+        ip ftp source-interface GigabitEthernet1
+
+
+
+    order:
+      - 'connect'
+      - 'write_erase'
+      - 'reload'
+      - 'install_remove_inactive'
+      - 'apply_configuration'
+      - 'ping_server'
+      - 'copy_to_linux'
+      - 'copy_to_device'
+      - 'install_image'

@@ -1,0 +1,88 @@
+cleaners:
+  DeviceClean:
+    module: genie.libs.clean
+    devices: [Router]
+
+devices:
+  Router:
+    images:
+        - /auto/tftp-blr-users1/malallur/saltfoon/C9800-CL-universalk9.2025-03-24_17.34_malallur.SSA.bin
+    device_recovery:
+      break_count: 5
+      console_activity_pattern: "\\.\\.\\.\\."
+      timeout: 600
+      recovery_password: "cisco"
+      golden_image:
+        - flash:laas/c9800_golden.bin
+
+    connect:
+    write_erase:
+
+    reload:
+      reload_service_args:
+        prompt_recovery: True
+        timeout: 2000
+      check_modules:
+        check: False
+
+    install_remove_inactive:
+      timeout: 180
+
+    install_image:
+      images: /auto/tftp-blr-users1/malallur/saltfoon/C9800-CL-universalk9.2025-03-24_17.34_malallur.SSA.bin
+      install_timeout: 1000
+      reload_timeout: 1000
+
+    ping_server:
+      server: 10.76.239.88
+
+    copy_to_linux:
+      protocol: scp
+      destination:
+        directory: '/auto/tftp-blr-users1/malallur/saltfoon'
+      overwrite: False
+      copy_attempts: 3
+      append_hostname: False
+
+    copy_to_device:
+      origin:
+        files:
+          - /
+        hostname: bgl11-lv1-tftp1
+      destination:
+        directory: flash:/
+      protocol: tftp
+      overwrite: False
+      timeout: 9000
+      skip_deletion: True
+      verify_num_images: True
+      check_file_stability: True
+      min_free_space_percent: 30
+      protected_files:
+        - laas
+        - .ssh
+        - tech_support
+        - boothelper.log
+        - preboothelper.log
+        - memleak.tcl
+        - nvram_config
+        - nvram_config_bkup
+
+    apply_configuration:
+      configuration: |
+        platform shell
+        service internal
+        ip forward-protocol nd
+        ip http server
+        ip http authentication local
+        ip http secure-server
+        ip tftp blocksize 8192
+      config_timeout: 30
+      config_stable_time: 120
+    order:
+      - 'connect'
+      - 'install_remove_inactive'
+      - 'apply_configuration'
+      - 'copy_to_linux'
+      - 'copy_to_device'
+      - 'install_image'
